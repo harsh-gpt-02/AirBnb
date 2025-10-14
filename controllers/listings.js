@@ -2,22 +2,32 @@
 const Listing = require("../models/listing");
 
 async function geocodeAddress(address) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-    address
-  )}&limit=1`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`;
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": process.env.USER_AGENT, // now loaded from .env
+      },
+    });
+
     const data = await response.json();
+    console.log("Raw geocoding data:", data);
 
     if (data && data.length > 0) {
-      return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+      const lon = parseFloat(data[0].lon);
+      const lat = parseFloat(data[0].lat);
+      console.log(`Coordinates found for ${address}: [${lon}, ${lat}]`);
+      return [lon, lat];
+    } else {
+      console.log("No coordinates found for:", address);
+      return null;
     }
-    return null;
   } catch (e) {
     console.error("Geocoding API Error:", e);
     return null;
   }
 }
+
 
 
 module.exports.index = async (req, res) => {
@@ -50,21 +60,20 @@ module.exports.createListing = async (req, res, next) => {
   const locationAddress = req.body.listing.location;
   const coordinates = await geocodeAddress(locationAddress);
 
-  if (coordinates) {
-    newListing.geometry = {
-      type: "Point",
-      coordinates: coordinates, // This array is [Longitude, Latitude]
-    };
-    // console.log(
-    //   `Geocoded ${locationAddress} to Lat: ${coordinates[0]}, Lng: ${coordinates[1]}`
-    // );
-  } else {
-    req.flash(
-      "error",
-      "Could not determine exact location coordinates. Listing saved without them."
-    );
-    delete newListing.geometry;
-  }
+if (coordinates) {
+  newListing.geometry = {
+    type: "Point",
+    coordinates: coordinates, // [lon, lat]
+  };
+} else {
+  // Default coordinates to avoid validation errors
+  newListing.geometry = {
+    type: "Point",
+    coordinates: [77.2090, 28.6139], // Delhi fallback
+  };
+  console.log("Using default coordinates because geocoding failed.");
+}
+
 
   let url = req.file.path;
   let filename = req.file.filename;

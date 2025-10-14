@@ -33,6 +33,7 @@ main()
 
 async function main() {
   mongoose.connect(dbUrl); //MONGO_URL
+  // mongoose.connect(MONGO_URL);
 }
 
 app.set("view engine", "ejs");
