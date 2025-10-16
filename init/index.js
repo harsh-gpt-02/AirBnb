@@ -1,8 +1,13 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config({ path: "../.env" });
+}
+
 const mongoose = require("mongoose");
 const initData = require("./data.js");
 const Listing = require("../models/listing.js");
 
-const MONGO_URl = "mongodb://127.0.0.1:27017/wanderlust"
+// const MONGO_URl = "mongodb://127.0.0.1:27017/wanderlust"
+const dbUrl = process.env.ATLASDB_URL;
 
 main().then(()=>{
     console.log("Connected to DB");
@@ -11,8 +16,12 @@ main().then(()=>{
     console.log(err);
 });
 
-async function main(){
-   await mongoose.connect(MONGO_URl);
+// async function main(){
+//    await mongoose.connect(MONGO_URl);
+// }
+async function main() {
+  await mongoose.connect(dbUrl);
+  console.log(" Connected to MongoDB Atlas");
 }
 
 const initDB = async ()=>{
